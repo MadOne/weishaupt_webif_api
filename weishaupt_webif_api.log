@@ -1,0 +1,204 @@
+2026-06-07 16:25:56,530 [INFO] weishaupt_webif_api: Starting Weishaupt WebIF API monitor for 10.10.1.225...
+2026-06-07 16:25:56,530 [DEBUG] weishaupt_webif_api.api: Starting with empty cookie jar.
+2026-06-07 16:25:56,635 [INFO] weishaupt_webif_api.api: Session expired. Re-authenticating...
+2026-06-07 16:25:56,635 [INFO] weishaupt_webif_api.api: Attempting login to Weishaupt WebIF...
+2026-06-07 16:25:57,268 [INFO] weishaupt_webif_api.api: ✅ Successful Login!
+2026-06-07 16:25:59,727 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200 (retry)
+2026-06-07 16:25:59,731 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 16:25:59,732 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 16:25:59,732 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 16:25:59,732 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: --- Final Communication Statistics ---
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: requests            : 3
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: successes           : 1
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: integrity_failures  : 0
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: timeouts            : 0
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: cooldowns           : 0
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api: max_duration        : 2.4579181890003383
+2026-06-07 16:26:30,715 [INFO] weishaupt_webif_api.api: Communication Statistics (final): {'requests': 3, 'successes': 1, 'integrity_failures': 0, 'timeouts': 0, 'cooldowns': 0, 'max_duration': 2.4579181890003383}
+2026-06-07 16:28:21,391 [INFO] weishaupt_webif_api: Starting Weishaupt WebIF API monitor for 10.10.1.225...
+2026-06-07 16:28:22,401 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:28:22,404 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 16:29:22,464 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 16:33:23,292 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:33:23,294 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 16:34:23,354 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 16:38:25,008 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:38:25,015 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 16:38:25,015 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 16:38:25,015 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 16:38:25,015 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 16:39:26,929 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 16:39:26,935 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 16:39:26,935 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 16:39:26,935 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 16:44:33,033 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:44:33,037 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 16:45:33,095 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 16:49:38,410 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:49:38,412 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 16:50:38,470 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 16:54:39,301 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:54:39,303 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 16:55:39,363 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 16:59:45,564 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 16:59:45,568 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 16:59:45,568 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 16:59:45,569 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 16:59:45,569 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:00:48,107 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:00:48,112 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:00:48,112 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:00:48,112 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:05:50,459 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:05:50,465 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 17:05:50,465 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 17:05:50,466 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 17:05:50,466 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:06:52,472 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:06:52,479 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:06:52,479 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:06:52,479 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:11:58,158 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:11:58,161 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 17:12:58,220 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 17:17:05,022 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:17:05,023 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 17:18:05,083 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 17:22:06,769 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:22:06,773 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 0/6 entries
+2026-06-07 17:22:06,773 [ERROR] weishaupt_webif_api: Update failed: Data integrity error in Heizkreis. Retrying in 60 seconds...
+2026-06-07 17:23:06,830 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 17:27:08,543 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:27:08,547 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 17:27:08,548 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 17:27:08,548 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 17:27:08,548 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:28:12,196 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:28:12,202 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:28:12,202 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:28:12,202 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:33:13,971 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:33:13,976 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 17:33:13,976 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 17:33:13,976 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 17:33:13,976 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:34:15,971 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:34:15,977 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:34:15,977 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:34:15,977 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:39:17,826 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:39:17,830 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 17:39:17,830 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 17:39:17,831 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 17:39:17,831 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:40:20,327 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:40:20,333 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:40:20,333 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:40:20,333 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:45:22,112 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:45:22,116 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 17:45:22,116 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 17:45:22,116 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 17:45:22,116 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:46:24,052 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:46:24,058 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:46:24,058 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:46:24,058 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:51:25,837 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:51:25,841 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 17:51:25,841 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 17:51:25,841 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 17:51:25,842 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 17:52:27,988 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 17:52:27,994 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 17:52:27,994 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 17:52:27,994 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 17:57:33,375 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 17:57:33,377 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 17:58:33,437 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 18:02:35,109 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:02:35,114 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:02:35,114 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:02:35,114 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:02:35,114 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:03:42,406 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:03:42,409 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 18:04:42,467 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 18:08:44,181 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:08:44,188 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:08:44,189 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:08:44,189 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:08:44,189 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:09:46,163 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:09:46,168 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:09:46,169 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:09:46,169 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 18:14:47,907 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:14:47,911 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:14:47,911 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:14:47,911 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:14:47,911 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:15:49,867 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:15:49,872 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:15:49,872 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:15:49,872 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 18:20:52,972 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:20:52,975 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:20:52,976 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:20:52,976 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 0/12 entries
+2026-06-07 18:20:52,976 [ERROR] weishaupt_webif_api: Update failed: Data integrity error in Statistik. Retrying in 60 seconds...
+2026-06-07 18:21:53,036 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 239.9s
+2026-06-07 18:25:54,867 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:25:54,871 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:25:54,871 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:25:54,871 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:25:54,871 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:26:56,778 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:26:56,784 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:26:56,784 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:26:56,784 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 18:31:58,470 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:31:58,474 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:31:58,474 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:31:58,474 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:31:58,474 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:33:00,434 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:33:00,440 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:33:00,440 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:33:00,440 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 18:38:01,415 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:38:01,417 [ERROR] weishaupt_webif_api: Update failed: Incomplete HTML: missing columns. Retrying in 60 seconds...
+2026-06-07 18:39:01,463 [WARNING] weishaupt_webif_api.api: In COOLDOWN period. Waiting 240.0s
+2026-06-07 18:43:03,122 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:43:03,126 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:43:03,127 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:43:03,127 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:43:03,127 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:44:05,073 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:44:05,078 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:44:05,078 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:44:05,078 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 18:49:06,898 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:49:06,903 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:49:06,903 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:49:06,903 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:49:06,903 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:50:19,081 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:50:19,088 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:50:19,088 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:50:19,088 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 18:55:21,524 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 18:55:21,529 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 18:55:21,529 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 18:55:21,529 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 18:55:21,529 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
+2026-06-07 18:56:23,477 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C2200000000000000F9AF020003000401 -> 200
+2026-06-07 18:56:23,483 [DEBUG] weishaupt_webif_api.api: Section [Waermepumpe]: 41/41 entries
+2026-06-07 18:56:23,483 [DEBUG] weishaupt_webif_api.api: Update cycle successful.
+2026-06-07 18:56:23,483 [INFO] weishaupt_webif_api: Update Success: [Heizkreis]: 6, [2WEZ]: 7, [Statistik]: 12, [Waermepumpe]: 41
+2026-06-07 19:01:25,322 [DEBUG] weishaupt_webif_api.api: WEBIF GET http://10.10.1.225/settings_export.html?stack=0C00000100000000008000F9AF010002000301,0C000C1900000000000000F9AF020003000401,0C000C2300000000000000F9AF020003000401,0C000C2700000000000000F9AF020003000401 -> 200
+2026-06-07 19:01:25,326 [DEBUG] weishaupt_webif_api.api: Section [Heizkreis]: 6/6 entries
+2026-06-07 19:01:25,326 [DEBUG] weishaupt_webif_api.api: Section [2WEZ]: 7/7 entries
+2026-06-07 19:01:25,326 [DEBUG] weishaupt_webif_api.api: Section [Statistik]: 12/12 entries
+2026-06-07 19:01:25,326 [DEBUG] weishaupt_webif_api.api: Breather delay: waiting 60.0s
