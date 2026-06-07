@@ -22,3 +22,8 @@ lwp_cookies.txt
 .DS_Store
 .idea/
 .vscode/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
