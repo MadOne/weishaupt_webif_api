@@ -1,0 +1,24 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Weishaupt WebIF API runtime artifacts
+weishaupt_webif_api.log
+lwp_state.json
+lwp_cookies.txt
+
+# System and IDE files
+.DS_Store
+.idea/
+.vscode/
