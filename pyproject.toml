@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weishaupt-webif-api"
+version = "0.1.0"
+description = "Async Python library for the Weishaupt WebIF heat pump interface."
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    {name = "Mad_One", email = "madone85@googlemail.com"},
+]
+dependencies = [
+    "httpx>=0.24",
+    "beautifulsoup4>=4.12",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+]
+
+keywords = [
+    "weishaupt",
+    "heatpump",
+    "heat-pump",
+    "home-assistant",
+    "hvac",
+    "webif",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "respx>=0.20.0",
+]
+[project.urls]
+Homepage = "https://github.com/MadOne/weishaupt_webif_api"
+Repository = "https://github.com/MadOne/weishaupt_webif_api"
+Issues = "https://github.com/MadOne/weishaupt_webif_api/issues"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+[tool.setuptools]
+packages = ["weishaupt_webif_api"]
