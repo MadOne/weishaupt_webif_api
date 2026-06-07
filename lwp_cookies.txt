@@ -1,2 +1,0 @@
-#LWP-Cookies-2.0
-Set-Cookie3: session="pmG1VBbkgjOJJl4AFwXayc+rA7/kxbXliHt+0J+VUimlSTeci5pfWDUJuKt/8clxY0kC6dZFVAN5RZaGsJLJeqR0xhvCxH7nAmFMmjE8C+ehHPE+XrrT4AnqM8QJwvmG1Zn"; path="/"; domain=10.10.1.225; path_spec; discard; version=0
