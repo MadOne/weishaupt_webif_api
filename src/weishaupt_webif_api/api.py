@@ -355,21 +355,12 @@ class WebifConnection:
     ) -> dict[str, dict[str, Any]]:
         """Fetch and update data categories from the heat pump.
 
-        If categories is None, all available categories are updated.
-        Requests are filtered and split into batches to minimize MCU stress.
-
         :param categories: List of categories to fetch (e.g., ['Statistik']).
         :return: A dictionary containing the updated data grouped by category.
         :raises ValueError: If an invalid category name is provided.
         :raises McuResourceError: If data integrity check fails.
         """
-        valid_categories = list(Info.keys())
-        requested = categories if categories is not None else valid_categories
-
-        for cat in requested:
-            if cat not in valid_categories:
-                msg = f"Invalid category '{cat}'. Valid options: {valid_categories}"
-                raise ValueError(msg)
+        requested = self._validate_categories(categories)
 
         info_header = "0C00000100000000008000F9AF010002000301"
         self._values.setdefault("Info", {})
@@ -423,6 +414,112 @@ class WebifConnection:
 
         _LOGGER.debug("Update cycle successful.")
         return self._values["Info"]
+
+    async def update_all_mock(
+        self,
+        categories: list[str] | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Return realistic data from a provided sample without polling.
+
+        :param categories: List of categories to fetch (e.g., ['Statistik']).
+        :return: A dictionary containing the mock data grouped by category.
+        :raises ValueError: If an invalid category name is provided.
+        """
+        requested = self._validate_categories(categories)
+
+        _LOGGER.debug("Returning static mock data for development.")
+        mock_data = self._get_mock_data()
+        return {cat: mock_data.get(cat, {}) for cat in requested}
+
+    def _validate_categories(self, categories: list[str] | None) -> list[str]:
+        """Validate requested categories against available ones."""
+        valid_categories = list(Info.keys())
+        requested = categories if categories is not None else valid_categories
+
+        for cat in requested:
+            if cat not in valid_categories:
+                msg = f"Invalid category '{cat}'. Valid options: {valid_categories}"
+                raise ValueError(msg)
+        return requested
+
+    def _get_mock_data(self) -> dict[str, dict[str, Any]]:
+        """Return the real-world data sample provided for development purposes."""
+        return {
+            "Heizkreis": {
+                "Außentemperatur": "24.5",
+                "AT Mittelwert": "25.0",
+                "AT Langzeitwert": "25.5",
+                "Raumsolltemperatur": "16.0",
+                "Vorlaufsolltemperatur": "--",
+                "Vorlauftemperatur": "62.0",
+            },
+            "Waermepumpe": {
+                "Betrieb": "PV Optimierung",
+                "Störmeldung": "--",
+                "Warmwassertemperatur": "53.0",
+                "Leistungsanforderung": "100",
+                "Solltemperatur": "59.5",
+                "Anforderung": "4.3",
+                "Schaltdifferenz dynamisch": "5.0",
+                "Vorlauftemperatur": "63.0",
+                "Rücklauftemperatur": "57.5",
+                "Drehzahl Pumpe M1": "80",
+                "Volumenstrom": "1.7",
+                "Stellung Umschaltventil": "Warmwasser",
+                "Version WWP-SG": "V3.0",
+                "Version WWP-EC WBB": "V5.3",
+                "Soll Leistung": "9.9",
+                "Ist Leistung": "9.6",
+                "Expansionsventil AG Eintr": "46.0",
+                "Luftansaugtemperatur": "24.5",
+                "Wärmetauscher AG Austrit": "15.0",
+                "Verdichtersauggastemp.": "23.0",
+                "EVI Sauggastemperatur": "57.5",
+                "Kältemittel IG Austritt": "54.0",
+                "Ölsumpftemperatur": "41.5",
+                "Druckgastemperatur": "95.0",
+                "Niederdruck": "10.3",
+                "Verdampfungstemperatur": "11.5",
+                "Hochdruck": "39.1",
+                "Kondensationstemperatur": "62.0",
+                "Mitteldruck": "20.8",
+                "Sättigungstemperatur EVI": "36.0",
+                "Überhitzung Heizen": "3.0",
+                "Öffnungsgrad EXV Heizen": "22",
+                "Überhitzung Verdichter": "11.0",
+                "Öffnungsgrad EXV Kühlen": "0",
+                "Überhitzung EVI": "21.5",
+                "Öffnungsgrad EVI": "48",
+                "Betriebsstd. Verdichter": "7704",
+                "Schaltspiele Verdichter": "3712",
+                "Schaltspiele Abtauen": "1490",
+                "Verdichter": "5013",
+                "Außengerät Variante": "RMHA-10",
+            },
+            "2WEZ": {
+                "Status": "0",
+                "Status E-Heizung 1": "Aus",
+                "Status E-Heizung 2": "Aus",
+                "Betriebsstunden E1": "106",
+                "Betriebsstunden E2": "71",
+                "Schaltspiele E1": "58",
+                "Schaltspiele E2": "20",
+            },
+            "Statistik": {
+                "th. Energie Heizen Tag": "1.630h",
+                "th. Energie WW Tag": "5.498h",
+                "th. Energie gesamt Tag": "7.129h",
+                "elektrische Energie Tag": "1.882h",
+                "th. Energie Heizen Monat": "3.832h",
+                "th. Energie WW Monat": "42.393h",
+                "th. Energie gesamt Monat": "46.226h",
+                "elektrische Energie Monat": "14.420h",
+                "th. Energie Heizen Jahr": "8474.162h",
+                "th. Energie WW Jahr": "1594.194h",
+                "th. Energie gesamt Jahr": "10068.356h",
+                "elektrische Energie Jahr": "3157.207h",
+            },
+        }
 
     def _get_values(self, soup: Tag) -> dict[str, Any]:
         """Parse parameter names and values from a specific HTML column.

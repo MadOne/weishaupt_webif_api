@@ -45,7 +45,10 @@ async def _main(args: argparse.Namespace) -> None:
             while True:
                 try:
                     # Fetch all data
-                    data = await con.update_all()
+                    if args.mock:
+                        data = await con.update_all_mock()
+                    else:
+                        data = await con.update_all()
                     summary = ", ".join(
                         [f"[{cat}]: {len(vals)}" for cat, vals in data.items()],
                     )
@@ -132,6 +135,11 @@ def main() -> None:
         "--debug",
         action="store_true",
         help="Enable debug logging",
+    )
+    parser.add_argument(
+        "--mock",
+        action="store_true",
+        help="Use mock data for development without polling the device",
     )
 
     args = parser.parse_args()
