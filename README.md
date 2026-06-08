@@ -9,6 +9,8 @@ A Python library for interacting asynchronously with the Weishaupt heating syste
 - **Persistence**: Automatically manages session cookies and internal state (cooldowns, request timing) across restarts using local storage.
 - **Smart Batching**: Includes logic to batch requests safely, preventing resource exhaustion on the hardware interface.
 - **Robust Error Handling**: Detects session expiration, login redirections, and MCU resource errors.
+- **Mock Mode**: Access real-world sample data without polling the device—perfect for developing Home Assistant integrations.
+- **CLI Monitor**: A built-in command-line tool to monitor your heat pump telemetry in real-time.
 
 ## Installation
 
@@ -27,13 +29,16 @@ from weishaupt_webif_api import WebifConnection
 async def main():
     # Initialize the connection
     async with WebifConnection(
-        host="10.10.1.225", 
+        ip="10.10.1.225", 
         username="user", 
         password="pass",
         storage_path="./data"
     ) as api:
         # Fetch specific categories
         data = await api.update_all(["Statistik", "Heizkreis"])
+
+        # Fetch mockup data for developement puposes. This is no real data and wont change!
+        mcok_data = await api.update_all_mock(["Statistik", "Heizkreis"])
         
         for category, values in data.items():
             print(f"--- {category} ---")
@@ -43,6 +48,8 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+
 
 ## Configuration & State
 
