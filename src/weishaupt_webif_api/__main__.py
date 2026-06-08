@@ -57,9 +57,10 @@ async def _main(args: argparse.Namespace) -> None:
                     await asyncio.sleep(args.interval)
                 except (asyncio.CancelledError, KeyboardInterrupt):
                     raise
-                except Exception:
-                    logger.exception(
-                        "Update failed. Retrying in %ds...",
+                except Exception as err:  # noqa: BLE001
+                    logger.error(  # noqa: TRY400
+                        "Update failed: %s. Retrying in %ds...",
+                        err,
                         args.retry_interval,
                     )
                     await asyncio.sleep(args.retry_interval)
