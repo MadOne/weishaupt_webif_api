@@ -42,6 +42,10 @@ test = [
     "pytest-asyncio>=0.21.0",
     "respx>=0.20.0",
 ]
+
+[project.scripts]
+weishaupt-api = "weishaupt_webif_api.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/MadOne/weishaupt_webif_api"
 Repository = "https://github.com/MadOne/weishaupt_webif_api"
@@ -55,4 +59,36 @@ filterwarnings = [
     "ignore::DeprecationWarning",
 ]
 [tool.setuptools]
-packages = ["weishaupt_webif_api"]
+package-dir = {"" = "src"}
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["weishaupt_webif_api", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "ALL"
+]
+
+ignore = [
+    "D203", # one-blank-line-before-class (incompatible with D211)
+    "D213", # multi-line-summary-second-line (incompatible with D212)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore S101 (assert statements) in all test files
+"tests/**/*.py" = ["S101"]
+
+
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true

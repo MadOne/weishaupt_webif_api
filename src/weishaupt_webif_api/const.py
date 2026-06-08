@@ -1,9 +1,12 @@
+"""Constants and formatters for the Weishaupt WebIF API."""
+
 import logging
+from typing import ClassVar
 
 
 class ColoredFormatter(logging.Formatter):
-    """
-    Custom logging formatter that applies ANSI color codes to output.
+    """Custom logging formatter that applies ANSI color codes to output.
+
     Designed to improve visibility of log levels in terminal environments.
     """
 
@@ -15,7 +18,7 @@ class ColoredFormatter(logging.Formatter):
     reset = "\x1b[0m"
     format_str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
-    FORMATS = {
+    FORMATS: ClassVar[dict[int, str]] = {
         logging.DEBUG: grey + format_str + reset,
         logging.INFO: blue + format_str + reset,
         logging.WARNING: yellow + format_str + reset,
@@ -23,7 +26,8 @@ class ColoredFormatter(logging.Formatter):
         logging.CRITICAL: bold_red + format_str + reset,
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
+        """Format the log record with ANSI color codes."""
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)

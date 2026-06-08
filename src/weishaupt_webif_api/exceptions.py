@@ -1,3 +1,6 @@
+"""Exception definitions for the Weishaupt WebIF API."""
+
+
 class WeishauptWebifError(Exception):
     """Base class for all library errors."""
 

@@ -3,7 +3,7 @@
 __version__ = "0.1.0"
 
 from .api import WebifConnection
-from .const import EXPECTED_COUNTS, Info, ColoredFormatter
+from .const import EXPECTED_COUNTS, ColoredFormatter, Info
 from .exceptions import (
     ConnectionTimeoutError,
     McuResourceError,
@@ -12,13 +12,13 @@ from .exceptions import (
 )
 
 __all__ = [
-    "__version__",
-    "WebifConnection",
+    "EXPECTED_COUNTS",
     "ColoredFormatter",
-    "WeishauptWebifError",
-    "McuResourceError",
-    "SessionExpiredError",
     "ConnectionTimeoutError",
     "Info",
-    "EXPECTED_COUNTS",
+    "McuResourceError",
+    "SessionExpiredError",
+    "WebifConnection",
+    "WeishauptWebifError",
+    "__version__",
 ]
