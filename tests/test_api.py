@@ -58,9 +58,10 @@ async def test_persistence_logic(tmp_path: Path) -> None:
     api = WebifConnection("10.10.1.225", "user", "pass", storage_path=tmp_path)
 
     api._cooldown_until = time.monotonic() + 300.0  # noqa: SLF001
-    api._save_state()  # noqa: SLF001
+    await api._save_state()  # noqa: SLF001
 
     api_new = WebifConnection("10.10.1.225", "user", "pass", storage_path=tmp_path)
+    await api_new._load_state()  # noqa: SLF001
 
     assert api_new._cooldown_until > time.monotonic() + 298.0  # noqa: SLF001
     assert api_new._cooldown_until <= time.monotonic() + 300.0  # noqa: SLF001

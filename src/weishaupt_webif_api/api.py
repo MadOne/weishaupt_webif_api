@@ -7,7 +7,7 @@ import time
 import types
 from http.cookiejar import LWPCookieJar
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Self, cast
 
 import httpx
 from bs4 import BeautifulSoup
@@ -60,7 +60,6 @@ class WebifConnection:
         self._password = password
         self._client: httpx.AsyncClient | None = None
         self._storage_path = Path(storage_path) if storage_path else Path.cwd()
-        self._storage_path.mkdir(parents=True, exist_ok=True)
 
         self._state_file = self._storage_path / "lwp_state.json"
         self._request_lock = asyncio.Lock()
@@ -69,7 +68,8 @@ class WebifConnection:
         self._last_request_time = 0.0  # Monotonic
         self._cooldown_until = 0.0  # Monotonic
         self._base_url = f"http://{self._ip}"
-        self._values: dict[str, dict[str, dict[str, Any]]] = {}
+        self._values: dict[str, dict[str, dict[str, str]]] = {}
+        self._initialized = False
         self._stats = {
             "requests": 0,
             "successes": 0,
@@ -79,32 +79,47 @@ class WebifConnection:
             "max_duration": 0.0,
         }
 
-        self._load_state()
-
-    def _load_state(self) -> None:
+    async def _load_state(self) -> None:
         """Load persisted timers from the state file."""
-        try:
-            with self._state_file.open(encoding="utf-8") as f:
-                state = json.load(f)
-                # Recover cooldown relative to current wall clock
-                expiry = state.get("cooldown_expiry", 0.0)
-                remaining = expiry - time.time()
-                if remaining > 0:
-                    self._cooldown_until = time.monotonic() + remaining
-                else:
-                    self._cooldown_until = 0.0
-        except (FileNotFoundError, json.JSONDecodeError):
-            self._cooldown_until = 0.0
+        # Ensure directory exists before trying to read/write
+        await asyncio.to_thread(self._storage_path.mkdir, parents=True, exist_ok=True)
 
-    def _save_state(self) -> None:
+        def _load() -> dict[str, float]:
+            """Load timers from the state file."""
+            try:
+                with self._state_file.open(encoding="utf-8") as f:
+                    return cast("dict[str, float]", json.load(f))
+            except (FileNotFoundError, json.JSONDecodeError):
+                return {}
+
+        try:
+            state = await asyncio.to_thread(_load)
+            # Recover cooldown relative to current wall clock
+            expiry = state.get("cooldown_expiry", 0.0)
+            remaining = expiry - time.time()
+            if remaining > 0:
+                self._cooldown_until = time.monotonic() + remaining
+            else:
+                self._cooldown_until = 0.0
+        except OSError:
+            self._cooldown_until = 0.0
+        self._initialized = True
+
+    async def _save_state(self) -> None:
         """Persist current timers to the state file."""
         # Calculate wall-clock expiry for persistence
         remaining = max(0, self._cooldown_until - time.monotonic())
-        state = {"cooldown_expiry": time.time() + remaining if remaining > 0 else 0.0}
-        with self._state_file.open("w", encoding="utf-8") as f:
-            json.dump(state, f)
+        state_data = {
+            "cooldown_expiry": time.time() + remaining if remaining > 0 else 0.0,
+        }
 
-    def _get_client(self) -> httpx.AsyncClient:
+        def _save() -> None:
+            with self._state_file.open("w", encoding="utf-8") as f:
+                json.dump(state_data, f)
+
+        await asyncio.to_thread(_save)
+
+    async def _get_client(self) -> httpx.AsyncClient:
         """Initialize or return the existing httpx AsyncClient.
 
         Sets up default headers and loads cookies from the local lwp_cookies.txt file
@@ -126,12 +141,15 @@ class WebifConnection:
             cookie_file = self._storage_path / "lwp_cookies.txt"
             cookies = LWPCookieJar(filename=str(cookie_file))
             try:
-                cookies.load(ignore_discard=True)
+                await asyncio.to_thread(cookies.load, ignore_discard=True)
             except FileNotFoundError:
                 _LOGGER.debug("Starting with empty cookie jar.")
 
             self._client = httpx.AsyncClient(
                 base_url=self._base_url,
+                # The httpx client is initialized once.
+                # object directly.
+                # The blocking .load() call is handled above.
                 headers=headers,
                 follow_redirects=True,
                 timeout=httpx.Timeout(60.0, connect=20.0),
@@ -142,6 +160,8 @@ class WebifConnection:
 
     async def __aenter__(self) -> Self:
         """Support async context manager."""
+        if not self._initialized:
+            await self._load_state()
         return self
 
     async def __aexit__(
@@ -199,6 +219,9 @@ class WebifConnection:
         :return: The httpx.Response object.
         """
         async with self._request_lock:
+            if not self._initialized:
+                await self._load_state()
+
             now = time.monotonic()
             if now < self._cooldown_until:
                 self._stats["cooldowns"] += 1
@@ -223,8 +246,9 @@ class WebifConnection:
         **kwargs: Any,  # noqa: ANN401
     ) -> httpx.Response:
         """Execute an HTTP request and handle session expiration."""
+        # Modifies internal state, no I/O.
         self._check_and_reset_stats()
-        client = self._get_client()
+        client = await self._get_client()
         self._stats["requests"] += 1
         start_time = time.monotonic()
 
@@ -234,20 +258,20 @@ class WebifConnection:
             self._stats["timeouts"] += 1
             self._last_request_time = time.monotonic()
             self._cooldown_until = self._last_request_time + self._cooldown_delay
-            self._save_state()
+            await self._save_state()
             msg = f"Connect timeout to {url}"
             raise ConnectionTimeoutError(msg) from err
         except httpx.ConnectError as err:
             self._last_request_time = time.monotonic()
             self._cooldown_until = self._last_request_time + self._cooldown_delay
-            self._save_state()
+            await self._save_state()
             msg = f"Connection refused at {url}"
             raise WeishauptWebifError(msg) from err
         except httpx.ReadTimeout as err:
             self._stats["timeouts"] += 1
             self._last_request_time = time.monotonic()
             self._cooldown_until = self._last_request_time + self._cooldown_delay
-            self._save_state()
+            await self._save_state()
             msg = f"Read timeout from {url}"
             raise ConnectionTimeoutError(msg) from err
         except Exception as err:
@@ -259,7 +283,7 @@ class WebifConnection:
             duration = time.monotonic() - start_time
             self._stats["max_duration"] = max(self._stats["max_duration"], duration)
             self._last_request_time = time.monotonic()
-            self._save_state()
+            await self._save_state()
 
             if "login.html" in str(response.url) or 'name="pass"' in response.text:
                 return await self._handle_expired_session(method, url, **kwargs)
@@ -285,7 +309,12 @@ class WebifConnection:
             # Retry original request after re-login
             self._stats["requests"] += 1
             start_retry = time.monotonic()
-            response = await self._get_client().request(method, url, **kwargs)
+            client = await self._get_client()
+            response = await client.request(
+                method,
+                url,
+                **kwargs,
+            )
             duration_retry = time.monotonic() - start_retry
 
             self._stats["max_duration"] = max(
@@ -293,7 +322,7 @@ class WebifConnection:
                 duration_retry,
             )
             self._last_request_time = time.monotonic()
-            self._save_state()
+            await self._save_state()
             _LOGGER.debug(
                 "WEBIF %s %s -> %s (retry)",
                 method,
@@ -310,7 +339,7 @@ class WebifConnection:
         Sends a POST request with credentials and verifies the redirection URL.
         Saves valid session cookies to the disk upon success.
         """
-        client = self._get_client()
+        client = await self._get_client()  # _get_client is now async
         _LOGGER.info("Attempting login to Weishaupt WebIF...")
 
         # Explicit direct request to avoid recursion through _do_request
@@ -328,7 +357,7 @@ class WebifConnection:
                 self._stats["max_duration"],
                 end_time - start_time,
             )
-            self._save_state()
+            await self._save_state()
         except httpx.HTTPError as err:
             # Errors during login are caught by the caller (_do_request or update_all)
             msg = f"HTTP error during login: {err}"
@@ -344,7 +373,11 @@ class WebifConnection:
         if "home.html" in final_url:
             _LOGGER.info("✅ Successful Login!")
             if self._client and isinstance(self._client.cookies.jar, LWPCookieJar):
-                self._client.cookies.jar.save(ignore_discard=True, ignore_expires=True)
+                await asyncio.to_thread(
+                    self._client.cookies.jar.save,
+                    ignore_discard=True,
+                    ignore_expires=True,
+                )
         else:
             msg = "Login failed: Unexpected response."
             raise WeishauptWebifError(msg)
@@ -352,7 +385,7 @@ class WebifConnection:
     async def update_all(
         self,
         categories: list[str] | None = None,
-    ) -> dict[str, dict[str, Any]]:
+    ) -> dict[str, dict[str, str]]:
         """Fetch and update data categories from the heat pump.
 
         :param categories: List of categories to fetch (e.g., ['Statistik']).
@@ -386,7 +419,7 @@ class WebifConnection:
             if len(cols) < (2 + len(batch_cats)):
                 self._cooldown_until = time.monotonic() + self._cooldown_delay
                 self._stats["integrity_failures"] += 1
-                self._save_state()
+                await self._save_state()
                 msg = "Incomplete HTML: missing columns"
                 raise McuResourceError(msg)
 
@@ -405,7 +438,7 @@ class WebifConnection:
                 if found != expected or found == 0:
                     self._stats["integrity_failures"] += 1
                     self._cooldown_until = time.monotonic() + self._cooldown_delay
-                    self._save_state()
+                    await self._save_state()
                     msg = f"Data integrity error in {category}"
                     raise McuResourceError(msg)
                 self._values["Info"][category] = section_data
@@ -418,7 +451,7 @@ class WebifConnection:
     async def update_all_mock(
         self,
         categories: list[str] | None = None,
-    ) -> dict[str, dict[str, Any]]:
+    ) -> dict[str, dict[str, str]]:
         """Return realistic data from a provided sample without polling.
 
         :param categories: List of categories to fetch (e.g., ['Statistik']).
@@ -442,7 +475,7 @@ class WebifConnection:
                 raise ValueError(msg)
         return requested
 
-    def _get_mock_data(self) -> dict[str, dict[str, Any]]:
+    def _get_mock_data(self) -> dict[str, dict[str, str]]:
         """Return the real-world data sample provided for development purposes."""
         return {
             "Heizkreis": {
@@ -521,7 +554,7 @@ class WebifConnection:
             },
         }
 
-    def _get_values(self, soup: Tag) -> dict[str, Any]:
+    def _get_values(self, soup: Tag) -> dict[str, str]:
         """Parse parameter names and values from a specific HTML column.
 
         This method strips known units (like °C or KWh) from the values
@@ -531,7 +564,7 @@ class WebifConnection:
         :return: A dictionary of parameter names and their cleaned values.
         """
         soup_links = soup.find_all(name="div", class_="nav-link browseobj")
-        values: dict[str, Any] = {}
+        values: dict[str, str] = {}
         for item in soup_links:
             if not isinstance(item, Tag):
                 continue
