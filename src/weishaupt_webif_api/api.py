@@ -13,7 +13,7 @@ import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from .const import EXPECTED_COUNTS, UNITS, Info
+from .const import EXPECTED_COUNTS, INFO_HEADER, NAV_LABEL_TO_CATEGORY, UNITS, Info
 from .exceptions import (
     ConnectionTimeoutError,
     McuResourceError,
@@ -42,6 +42,7 @@ class WebifConnection:
         user: str,
         password: str,
         *,
+        token: str = "F9AF",
         request_delay: float = 60.0,
         cooldown_delay: float = 300.0,
         storage_path: str | Path | None = None,
@@ -51,6 +52,9 @@ class WebifConnection:
         :param ip: The IP address of the heat pump module.
         :param user: The username for login.
         :param password: The password for login.
+        :param token: Device-specific 4-hex-digit token embedded in the WebIF
+            navigation stacks (visible in the WebIF page's address bar). Differs
+            per device; a wrong value yields incomplete pages.
         :param storage_path: Optional path for storing cookies and state files.
         :param request_delay: Breather delay between requests in seconds.
         :param cooldown_delay: Cooldown penalty after failure in seconds.
@@ -58,6 +62,9 @@ class WebifConnection:
         self._ip = ip
         self._username = user
         self._password = password
+        self._token = token
+        self._stack_codes: dict[str, str] = {}
+        _LOGGER.debug("WebIF connection initialized with token '%s'", token)
         self._client: httpx.AsyncClient | None = None
         self._storage_path = Path(storage_path) if storage_path else Path.cwd()
 
@@ -133,6 +140,11 @@ class WebifConnection:
                 "Accept": (
                     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
                 ),
+                # Force German UI: the WCM serves labels per Accept-Language and
+                # the parsed data is keyed by the German label text. Without this
+                # a device defaulting to English returns "outside temperature"
+                # etc. and every lookup by the German name fails.
+                "Accept-Language": "de-DE,de;q=0.9",
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Origin": self._base_url,
                 "Referer": f"{self._base_url}/login.html",
@@ -382,6 +394,39 @@ class WebifConnection:
             msg = "Login failed: Unexpected response."
             raise WeishauptWebifError(msg)
 
+    async def _discover_stack_codes(self) -> dict[str, str]:
+        """Discover this device's per-category second-level stack codes.
+
+        The codes embedded in the navigation stacks differ between WEM models,
+        so they are read from the Info menu's own links instead of hardcoded.
+        Returns a mapping of internal category key -> second-level stack code.
+        """
+        info_header = INFO_HEADER.format(token=self._token)
+        response = await self._request(
+            "GET", f"/settings_export.html?stack={info_header}"
+        )
+        soup = BeautifulSoup(markup=response.text, features="html.parser")
+        codes: dict[str, str] = {}
+        for link in soup.find_all("a"):
+            if not isinstance(link, Tag):
+                continue
+            h5 = link.find("h5")
+            href = str(link.get("href", ""))
+            if h5 is None or "stack=" not in href or "," not in href:
+                continue
+            category = NAV_LABEL_TO_CATEGORY.get(h5.text.strip())
+            if category is None:
+                continue
+            codes[category] = href.split(",")[-1].strip()
+        _LOGGER.debug("Discovered WebIF stack codes (token '%s'): %s", self._token, codes)
+        if not codes:
+            _LOGGER.warning(
+                "Could not discover any category codes from the Info menu. "
+                "The token '%s' is likely wrong for this device, or login failed.",
+                self._token,
+            )
+        return codes
+
     async def update_all(
         self,
         categories: list[str] | None = None,
@@ -391,61 +436,76 @@ class WebifConnection:
         :param categories: List of categories to fetch (e.g., ['Statistik']).
         :return: A dictionary containing the updated data grouped by category.
         :raises ValueError: If an invalid category name is provided.
-        :raises McuResourceError: If data integrity check fails.
         """
         requested = self._validate_categories(categories)
 
-        info_header = "0C00000100000000008000F9AF010002000301"
+        info_header = INFO_HEADER.format(token=self._token)
         self._values.setdefault("Info", {})
 
-        # Respect original safe batching structure but filter for requested items
-        safe_batches = [["Heizkreis", "2WEZ", "Statistik"], ["Waermepumpe"]]
-        active_batches = []
-        for batch in safe_batches:
-            filtered = [c for c in batch if c in requested]
-            if filtered:
-                active_batches.append(filtered)
+        if not self._stack_codes:
+            self._stack_codes = await self._discover_stack_codes()
 
-        for batch_cats in active_batches:
-            stack_string = f"{info_header}," + ",".join([Info[c] for c in batch_cats])
-            url = f"/settings_export.html?stack={stack_string}"
+        # Fetch each category with its own single-level request. Some WEM
+        # firmware variants do not return one values column per category when
+        # several are stacked into a single request (the extra stacks are
+        # treated as a nested path), so batching is avoided.
+        for category in requested:
+            code = self._stack_codes.get(category)
+            if not code:
+                _LOGGER.warning(
+                    "No stack code discovered for '%s' (token '%s'); skipping. "
+                    "The category may be absent from this device's Info menu.",
+                    category,
+                    self._token,
+                )
+                continue
+            url = f"/settings_export.html?stack={info_header},{code}"
             response = await self._request("GET", url)
             if response.status_code != HTTP_OK:
-                msg = f"HTTP {response.status_code}"
-                raise WeishauptWebifError(msg)
+                _LOGGER.warning(
+                    "WebIF returned HTTP %s for '%s'; skipping this cycle",
+                    response.status_code,
+                    category,
+                )
+                continue
 
             soup = BeautifulSoup(markup=response.text, features="html.parser")
             cols = soup.find_all("div", class_="col-3")
-            if len(cols) < (2 + len(batch_cats)):
-                self._cooldown_until = time.monotonic() + self._cooldown_delay
-                self._stats["integrity_failures"] += 1
-                await self._save_state()
-                msg = "Incomplete HTML: missing columns"
-                raise McuResourceError(msg)
-
-            for i, category in enumerate(batch_cats):
-                section_data = self._get_values(cols[i + 2])
-                found, expected = (
-                    len(section_data),
-                    EXPECTED_COUNTS.get(category, 0),
+            if len(cols) < 3:
+                _LOGGER.warning(
+                    "Incomplete WebIF page for '%s': got %d column(s), expected "
+                    "at least 3. This usually means the token '%s' is wrong for "
+                    "this device (check for a typo; the correct token is the "
+                    "4-character value shown in the address bar on the WebIF "
+                    "'Profimodus' page), or the login was rejected.",
+                    category,
+                    len(cols),
+                    self._token,
                 )
+                continue
+
+            section_data = self._get_values(cols[2])
+            found = len(section_data)
+            expected = EXPECTED_COUNTS.get(category, 0)
+            if found == 0:
+                _LOGGER.warning(
+                    "No values parsed for '%s' (token '%s'); skipping",
+                    category,
+                    self._token,
+                )
+                continue
+            if expected and found != expected:
                 _LOGGER.debug(
-                    "Section [%s]: %d/%d entries",
+                    "Section [%s]: %d entries (reference device has %d); "
+                    "keeping all parsed values",
                     category,
                     found,
                     expected,
                 )
-                if found != expected or found == 0:
-                    self._stats["integrity_failures"] += 1
-                    self._cooldown_until = time.monotonic() + self._cooldown_delay
-                    await self._save_state()
-                    msg = f"Data integrity error in {category}"
-                    raise McuResourceError(msg)
-                self._values["Info"][category] = section_data
-
+            self._values["Info"][category] = section_data
             self._stats["successes"] += 1
 
-        _LOGGER.debug("Update cycle successful.")
+        _LOGGER.debug("WebIF update cycle done (token='%s').", self._token)
         return self._values["Info"]
 
     async def update_all_mock(
