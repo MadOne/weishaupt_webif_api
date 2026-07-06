@@ -35,11 +35,27 @@ class ColoredFormatter(logging.Formatter):
 
 UNITS = ["m3/h", " KWh", " KW", " °C", " BAR", " rpm", " %", " K", " h"]
 
+# The 4-hex-digit token in these stack strings is device specific (it appears
+# in the WebIF page's own navigation links / address bar). It is substituted at
+# runtime from the configured token via str.format(token=...), so it must not
+# be hardcoded here.
+INFO_HEADER = "0C00000100000000008000{token}010002000301"
+
 Info = {
-    "Heizkreis": "0C000C1900000000000000F9AF020003000401",
-    "Waermepumpe": "0C000C2200000000000000F9AF020003000401",
-    "2WEZ": "0C000C2300000000000000F9AF020003000401",
-    "Statistik": "0C000C2700000000000000F9AF020003000401",
+    "Heizkreis": "0C000C1900000000000000{token}020003000401",
+    "Waermepumpe": "0C000C2200000000000000{token}020003000401",
+    "2WEZ": "0C000C2300000000000000{token}020003000401",
+    "Statistik": "0C000C2700000000000000{token}020003000401",
+}
+
+# The second-level stack codes above differ between WEM models, so they are
+# discovered at runtime from the Info menu's own navigation links. This maps the
+# German menu label (as shown in the WebIF) to the internal category key.
+NAV_LABEL_TO_CATEGORY = {
+    "Heizkreis": "Heizkreis",
+    "Wärmepumpe": "Waermepumpe",
+    "2. WEZ": "2WEZ",
+    "Statistik": "Statistik",
 }
 
 EXPECTED_COUNTS = {
