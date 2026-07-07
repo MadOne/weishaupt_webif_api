@@ -42,7 +42,7 @@ class WebifConnection:
         user: str,
         password: str,
         *,
-        token: str = "F9AF",
+        token: str = "F9AF",  # noqa: S107
         request_delay: float = 60.0,
         cooldown_delay: float = 300.0,
         storage_path: str | Path | None = None,
@@ -403,7 +403,8 @@ class WebifConnection:
         """
         info_header = INFO_HEADER.format(token=self._token)
         response = await self._request(
-            "GET", f"/settings_export.html?stack={info_header}"
+            "GET",
+            f"/settings_export.html?stack={info_header}",
         )
         soup = BeautifulSoup(markup=response.text, features="html.parser")
         codes: dict[str, str] = {}
@@ -417,8 +418,12 @@ class WebifConnection:
             category = NAV_LABEL_TO_CATEGORY.get(h5.text.strip())
             if category is None:
                 continue
-            codes[category] = href.split(",")[-1].strip()
-        _LOGGER.debug("Discovered WebIF stack codes (token '%s'): %s", self._token, codes)
+            codes[category] = href.rsplit(",", maxsplit=1)[-1].strip()
+        _LOGGER.debug(
+            "Discovered WebIF stack codes (token '%s'): %s",
+            self._token,
+            codes,
+        )
         if not codes:
             _LOGGER.warning(
                 "Could not discover any category codes from the Info menu. "
@@ -471,7 +476,7 @@ class WebifConnection:
 
             soup = BeautifulSoup(markup=response.text, features="html.parser")
             cols = soup.find_all("div", class_="col-3")
-            if len(cols) < 3:
+            if len(cols) < 3:  # noqa: PLR2004
                 _LOGGER.warning(
                     "Incomplete WebIF page for '%s': got %d column(s), expected "
                     "at least 3. This usually means the token '%s' is wrong for "
@@ -636,3 +641,12 @@ class WebifConnection:
                     value = value.replace(unit, "").strip()
                 values[name] = value
         return values
+
+    async def _postprocess_values(self) -> None:
+        info = self._values["Info"]
+        ist_leistuing = info["Waermepumpe"]["Ist Leistung"]
+        if ist_leistuing == "Aus":
+            ist_leistuing = 0
+        soll_leistuing = info["Waermepumpe"]["Soll Leistung"]
+        if soll_leistuing == "Aus":
+            soll_leistuing = 0

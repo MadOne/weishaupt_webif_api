@@ -40,6 +40,7 @@ UNITS = ["m3/h", " KWh", " KW", " °C", " BAR", " rpm", " %", " K", " h"]
 # runtime from the configured token via str.format(token=...), so it must not
 # be hardcoded here.
 INFO_HEADER = "0C00000100000000008000{token}010002000301"
+#              0C00000100000000008000 F9AF  010002000301
 
 Info = {
     "Heizkreis": "0C000C1900000000000000{token}020003000401",
