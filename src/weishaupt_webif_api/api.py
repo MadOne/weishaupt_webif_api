@@ -511,6 +511,9 @@ class WebifConnection:
             self._stats["successes"] += 1
 
         _LOGGER.debug("WebIF update cycle done (token='%s').", self._token)
+
+        # Change some stings to mumerics
+        await self._postprocess_values()
         return self._values["Info"]
 
     async def update_all_mock(
@@ -643,10 +646,14 @@ class WebifConnection:
         return values
 
     async def _postprocess_values(self) -> None:
+        _LOGGER.warning("Starting post processing of values")
         info = self._values["Info"]
-        ist_leistuing = info["Waermepumpe"]["Ist Leistung"]
-        if ist_leistuing == "Aus":
-            ist_leistuing = 0
-        soll_leistuing = info["Waermepumpe"]["Soll Leistung"]
-        if soll_leistuing == "Aus":
-            soll_leistuing = 0
+        if info["Waermepumpe"]["Ist Leistung"] == "Aus":
+            _LOGGER.warning("Setting Ist Leistung to 0")
+            info["Waermepumpe"]["Ist Leistung"] = 0
+        if info["Waermepumpe"]["Soll Leistung"] == "Aus":
+            _LOGGER.warning("Setting Soll Leistung to 0")
+            info["Waermepumpe"]["Soll Leistung"] = 0
+        if info["Waermepumpe"]["Anforderung"] == "--":
+            _LOGGER.warning("Setting Anforderung to 0")
+            info["Waermepumpe"]["Anforderung"] = 0
