@@ -554,6 +554,14 @@ class WebifConnection:
                 "Vorlaufsolltemperatur": "--",
                 "Vorlauftemperatur": "62.0",
             },
+            "Heizkreis1": {
+                "Außentemperatur": "24.5",
+                "AT Mittelwert": "25.0",
+                "AT Langzeitwert": "25.5",
+                "Raumsolltemperatur": "16.0",
+                "Vorlaufsolltemperatur": "--",
+                "Vorlauftemperatur": "62.0",
+            },
             "Waermepumpe": {
                 "Betrieb": "PV Optimierung",
                 "Störmeldung": "--",
@@ -646,14 +654,14 @@ class WebifConnection:
         return values
 
     async def _postprocess_values(self) -> None:
-        _LOGGER.warning("Starting post processing of values")
+        _LOGGER.debug("Starting post processing of values")
         info = self._values["Info"]
         if info["Waermepumpe"]["Ist Leistung"] == "Aus":
-            _LOGGER.warning("Setting Ist Leistung to 0")
+            _LOGGER.debug("Setting Ist Leistung to 0")
             info["Waermepumpe"]["Ist Leistung"] = 0
         if info["Waermepumpe"]["Soll Leistung"] == "Aus":
-            _LOGGER.warning("Setting Soll Leistung to 0")
+            _LOGGER.debug("Setting Soll Leistung to 0")
             info["Waermepumpe"]["Soll Leistung"] = 0
         if info["Waermepumpe"]["Anforderung"] == "--":
-            _LOGGER.warning("Setting Anforderung to 0")
+            _LOGGER.debug("Setting Anforderung to 0")
             info["Waermepumpe"]["Anforderung"] = 0

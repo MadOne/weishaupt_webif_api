@@ -44,6 +44,7 @@ INFO_HEADER = "0C00000100000000008000{token}010002000301"
 
 Info = {
     "Heizkreis": "0C000C1900000000000000{token}020003000401",
+    "Heizkreis1": "0C000C1900000000000000{token}020003000401",
     "Waermepumpe": "0C000C2200000000000000{token}020003000401",
     "2WEZ": "0C000C2300000000000000{token}020003000401",
     "Statistik": "0C000C2700000000000000{token}020003000401",
@@ -54,6 +55,7 @@ Info = {
 # German menu label (as shown in the WebIF) to the internal category key.
 NAV_LABEL_TO_CATEGORY = {
     "Heizkreis": "Heizkreis",
+    "Heizkreis 1": "Heizkreis1",
     "Wärmepumpe": "Waermepumpe",
     "2. WEZ": "2WEZ",
     "Statistik": "Statistik",
@@ -61,6 +63,7 @@ NAV_LABEL_TO_CATEGORY = {
 
 EXPECTED_COUNTS = {
     "Heizkreis": 6,
+    "Heizukreis1": 6,
     "Waermepumpe": 41,
     "2WEZ": 7,
     "Statistik": 12,
