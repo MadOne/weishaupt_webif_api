@@ -468,13 +468,27 @@ class WebifConnection:
         for category in requested:
             code = self._stack_codes.get(category)
             if not code:
-                _LOGGER.warning(
-                    "No stack code discovered for '%s' (token '%s'); skipping. "
-                    "The category may be absent from this device's Info menu.",
-                    category,
-                    self._token,
-                )
-                continue
+                fallback_category = None
+                if category == "Heizkreis" and "Heizkreis1" in self._stack_codes:
+                    fallback_category = "Heizkreis1"
+                elif category == "Heizkreis1" and "Heizkreis" in self._stack_codes:
+                    fallback_category = "Heizkreis"
+
+                if fallback_category:
+                    code = self._stack_codes[fallback_category]
+                    _LOGGER.debug(
+                        "Category '%s' not found; using fallback code from '%s'",
+                        category,
+                        fallback_category,
+                    )
+                else:
+                    _LOGGER.warning(
+                        "No stack code discovered for '%s' (token '%s'); skipping. "
+                        "The category may be absent from this device's Info menu.",
+                        category,
+                        self._token,
+                    )
+                    continue
             url = f"/settings_export.html?stack={info_header},{code}"
             response = await self._request("GET", url)
             if response.status_code != HTTP_OK:
@@ -665,14 +679,29 @@ class WebifConnection:
         return values
 
     async def _postprocess_values(self) -> None:
+        """Safely clean up values after fetching to prevent parsing failures."""
         _LOGGER.debug("Starting post processing of values")
-        info = self._values["Info"]
-        if info["Waermepumpe"]["Ist Leistung"] == "Aus":
+        info = self._values.get("Info", {})
+
+        # Guard the entire category fetch in case Waermepumpe itself was skipped
+        wp_info = info.get("Waermepumpe")
+        if not wp_info:
+            _LOGGER.debug(
+                "Category 'Waermepumpe' not available; skipping post-processing.",
+            )
+            return
+
+        # 1. Safely guard 'Ist Leistung'
+        if wp_info.get("Ist Leistung") == "Aus":
             _LOGGER.debug("Setting Ist Leistung to 0")
-            info["Waermepumpe"]["Ist Leistung"] = "0"
-        if info["Waermepumpe"]["Soll Leistung"] == "Aus":
+            wp_info["Ist Leistung"] = "0"
+
+        # 2. Safely guard 'Soll Leistung'
+        if wp_info.get("Soll Leistung") == "Aus":
             _LOGGER.debug("Setting Soll Leistung to 0")
-            info["Waermepumpe"]["Soll Leistung"] = "0"
-        if info["Waermepumpe"]["Anforderung"] == "--":
+            wp_info["Soll Leistung"] = "0"
+
+        # 3. Safely guard 'Anforderung'
+        if wp_info.get("Anforderung") == "--":
             _LOGGER.debug("Setting Anforderung to 0")
-            info["Waermepumpe"]["Anforderung"] = "0"
+            wp_info["Anforderung"] = "0"
