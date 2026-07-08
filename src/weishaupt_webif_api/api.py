@@ -108,15 +108,15 @@ class WebifConnection:
         self._cookies_loaded = False
 
     async def _load_state(self) -> None:
-        """Load persisted timers from the state file."""
+        """Load persisted timers and stack codes from the state file."""
         # Ensure directory exists before trying to read/write
         await asyncio.to_thread(self._storage_path.mkdir, parents=True, exist_ok=True)
 
-        def _load() -> dict[str, float]:
-            """Load timers from the state file."""
+        def _load() -> dict[str, Any]:
+            """Load state from the file."""
             try:
                 with self._state_file.open(encoding="utf-8") as f:
-                    return cast("dict[str, float]", json.load(f))
+                    return cast("dict[str, Any]", json.load(f))
             except (FileNotFoundError, json.JSONDecodeError):
                 return {}
 
@@ -129,16 +129,21 @@ class WebifConnection:
                 self._cooldown_until = time.monotonic() + remaining
             else:
                 self._cooldown_until = 0.0
+
+            # Recover stack codes
+            self._stack_codes = cast("dict[str, str]", state.get("stack_codes", {}))
         except OSError:
             self._cooldown_until = 0.0
+            self._stack_codes = {}
         self._initialized = True
 
     async def _save_state(self) -> None:
-        """Persist current timers to the state file."""
+        """Persist current timers and stack codes to the state file."""
         # Calculate wall-clock expiry for persistence
         remaining = max(0, self._cooldown_until - time.monotonic())
         state_data = {
             "cooldown_expiry": time.time() + remaining if remaining > 0 else 0.0,
+            "stack_codes": self._stack_codes,
         }
 
         def _save() -> None:
@@ -412,6 +417,10 @@ class WebifConnection:
         so they are read from the Info menu's own links instead of hardcoded.
         Returns a mapping of internal category key -> second-level stack code.
         """
+        _LOGGER.debug(
+            "Discovering WebIF stack codes",
+        )
+
         info_header = INFO_HEADER.format(token=self._token)
         response = await self._request(
             "GET",
@@ -460,6 +469,8 @@ class WebifConnection:
 
         if not self._stack_codes:
             self._stack_codes = await self._discover_stack_codes()
+            if self._stack_codes:
+                await self._save_state()
 
         # Fetch each category with its own single-level request. Some WEM
         # firmware variants do not return one values column per category when
