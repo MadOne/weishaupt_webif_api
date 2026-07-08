@@ -65,7 +65,6 @@ class WebifConnection:
         self._token = token
         self._stack_codes: dict[str, str] = {}
         _LOGGER.debug("WebIF connection initialized with token '%s'", token)
-        self._client: httpx.AsyncClient | None = None
         self._storage_path = Path(storage_path) if storage_path else Path.cwd()
 
         self._state_file = self._storage_path / "lwp_state.json"
@@ -85,6 +84,28 @@ class WebifConnection:
             "cooldowns": 0,
             "max_duration": 0.0,
         }
+
+        # Setup standard headers used for all interactions
+        self._headers = {
+            "User-Agent": "Mozilla/5.0 Weishaupt-Webif-API/0.1.0",
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            ),
+            # Force German UI: the WCM serves labels per Accept-Language and
+            # the parsed data is keyed by the German label text. Without this
+            # a device defaulting to English returns "outside temperature"
+            # etc. and every lookup by the German name fails.
+            "Accept-Language": "de-DE,de;q=0.9",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": self._base_url,
+            "Referer": f"{self._base_url}/login.html",
+            "Connection": "close",
+        }
+
+        # Client is initialized lazily during the first request inside the
+        # executor pool to prevent blocking calls on the main thread loop.
+        self._client: httpx.AsyncClient | None = None
+        self._cookies_loaded = False
 
     async def _load_state(self) -> None:
         """Load persisted timers from the state file."""
@@ -127,47 +148,38 @@ class WebifConnection:
         await asyncio.to_thread(_save)
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Initialize or return the existing httpx AsyncClient.
+        """Return the initialized client and lazy-load session cookies on first call.
 
-        Sets up default headers and loads cookies from the local lwp_cookies.txt file
-        to maintain session state between script restarts.
+        Loads cookies from the local lwp_cookies.txt file to maintain
+        session state between script restarts. Deferring the client generation
+        prevents load_verify_locations from blocking the Home Assistant event loop.
 
         :return: An active httpx.AsyncClient instance.
         """
         if self._client is None:
-            headers = {
-                "User-Agent": "Mozilla/5.0 Weishaupt-Webif-API/0.1.0",
-                "Accept": (
-                    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-                ),
-                # Force German UI: the WCM serves labels per Accept-Language and
-                # the parsed data is keyed by the German label text. Without this
-                # a device defaulting to English returns "outside temperature"
-                # etc. and every lookup by the German name fails.
-                "Accept-Language": "de-DE,de;q=0.9",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Origin": self._base_url,
-                "Referer": f"{self._base_url}/login.html",
-                "Connection": "close",
-            }
+            # We build the AsyncClient within a thread context to safely execute the synchronous
+            # disk I/O requirements of httpx's internal SSL/TLS context instantiation.
+            def _create_client() -> httpx.AsyncClient:
+                return httpx.AsyncClient(
+                    base_url=self._base_url,
+                    headers=self._headers,
+                    follow_redirects=True,
+                    timeout=httpx.Timeout(60.0, connect=20.0),
+                    limits=httpx.Limits(max_connections=1, max_keepalive_connections=0),
+                )
+
+            self._client = await asyncio.to_thread(_create_client)
+
+        if not self._cookies_loaded:
             cookie_file = self._storage_path / "lwp_cookies.txt"
             cookies = LWPCookieJar(filename=str(cookie_file))
             try:
                 await asyncio.to_thread(cookies.load, ignore_discard=True)
+                self._client.cookies.update(cookies)
             except FileNotFoundError:
                 _LOGGER.debug("Starting with empty cookie jar.")
+            self._cookies_loaded = True
 
-            self._client = httpx.AsyncClient(
-                base_url=self._base_url,
-                # The httpx client is initialized once.
-                # object directly.
-                # The blocking .load() call is handled above.
-                headers=headers,
-                follow_redirects=True,
-                timeout=httpx.Timeout(60.0, connect=20.0),
-                limits=httpx.Limits(max_connections=1, max_keepalive_connections=0),
-                cookies=cookies,
-            )
         return self._client
 
     async def __aenter__(self) -> Self:
@@ -213,7 +225,6 @@ class WebifConnection:
         self._check_and_reset_stats(force=True)
         if self._client and not self._client.is_closed:
             await self._client.aclose()
-            self._client = None
 
     async def _request(
         self,
@@ -512,7 +523,7 @@ class WebifConnection:
 
         _LOGGER.debug("WebIF update cycle done (token='%s').", self._token)
 
-        # Change some stings to mumerics
+        # Change some strings to numerics
         await self._postprocess_values()
         return self._values["Info"]
 
@@ -658,10 +669,10 @@ class WebifConnection:
         info = self._values["Info"]
         if info["Waermepumpe"]["Ist Leistung"] == "Aus":
             _LOGGER.debug("Setting Ist Leistung to 0")
-            info["Waermepumpe"]["Ist Leistung"] = 0
+            info["Waermepumpe"]["Ist Leistung"] = "0"
         if info["Waermepumpe"]["Soll Leistung"] == "Aus":
             _LOGGER.debug("Setting Soll Leistung to 0")
-            info["Waermepumpe"]["Soll Leistung"] = 0
+            info["Waermepumpe"]["Soll Leistung"] = "0"
         if info["Waermepumpe"]["Anforderung"] == "--":
             _LOGGER.debug("Setting Anforderung to 0")
-            info["Waermepumpe"]["Anforderung"] = 0
+            info["Waermepumpe"]["Anforderung"] = "0"
