@@ -515,10 +515,8 @@ class WebifConnection:
             if len(cols) < 3:  # noqa: PLR2004
                 _LOGGER.warning(
                     "Incomplete WebIF page for '%s': got %d column(s), expected "
-                    "at least 3. This usually means the token '%s' is wrong for "
-                    "this device (check for a typo; the correct token is the "
-                    "4-character value shown in the address bar on the WebIF "
-                    "'Profimodus' page), or the login was rejected.",
+                    "at least 3. This just happens sometimes."
+                    "If you get NO values maybe your token: '%s' is wrong.",
                     category,
                     len(cols),
                     self._token,
