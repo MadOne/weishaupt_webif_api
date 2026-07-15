@@ -43,7 +43,7 @@ class WebifConnection:
         password: str,
         *,
         token: str = "F9AF",  # noqa: S107
-        request_delay: float = 60.0,
+        request_delay: float = 10.0,
         cooldown_delay: float = 300.0,
         storage_path: str | Path | None = None,
     ) -> None:
@@ -99,13 +99,16 @@ class WebifConnection:
             "Content-Type": "application/x-www-form-urlencoded",
             "Origin": self._base_url,
             "Referer": f"{self._base_url}/login.html",
-            "Connection": "close",
         }
 
         # Client is initialized lazily during the first request inside the
         # executor pool to prevent blocking calls on the main thread loop.
         self._client: httpx.AsyncClient | None = None
         self._cookies_loaded = False
+
+        # Instantiate the LWPCookieJar here
+        self._cookie_file = self._storage_path / "lwp_cookies.txt"
+        self._cookie_jar = LWPCookieJar(filename=str(self._cookie_file))
 
     async def _load_state(self) -> None:
         """Load persisted timers and stack codes from the state file."""
@@ -155,35 +158,35 @@ class WebifConnection:
     async def _get_client(self) -> httpx.AsyncClient:
         """Return the initialized client and lazy-load session cookies on first call.
 
-        Loads cookies from the local lwp_cookies.txt file to maintain
-        session state between script restarts. Deferring the client generation
-        prevents load_verify_locations from blocking the Home Assistant event loop.
-
         :return: An active httpx.AsyncClient instance.
         """
+        # Load the cookies from file once before creating the client
+        if not self._cookies_loaded:
+            try:
+                await asyncio.to_thread(self._cookie_jar.load, ignore_discard=True)
+            except FileNotFoundError:
+                _LOGGER.debug("Starting with empty cookie jar.")
+            self._cookies_loaded = True
+
         if self._client is None:
-            # We build the AsyncClient within a thread context to safely execute the synchronous
-            # disk I/O requirements of httpx's internal SSL/TLS context instantiation.
+            # We build the AsyncClient within a thread context to safely execute the
+            # synchronous disk I/O requirements of httpx's internal SSL/TLS context
+            # instantiation.
             def _create_client() -> httpx.AsyncClient:
                 return httpx.AsyncClient(
                     base_url=self._base_url,
                     headers=self._headers,
                     follow_redirects=True,
                     timeout=httpx.Timeout(60.0, connect=20.0),
-                    limits=httpx.Limits(max_connections=1, max_keepalive_connections=0),
+                    limits=httpx.Limits(
+                        max_connections=1,
+                        max_keepalive_connections=1,
+                        keepalive_expiry=120,
+                    ),
+                    cookies=self._cookie_jar,  # <-- Pass the LWPCookieJar directly here
                 )
 
             self._client = await asyncio.to_thread(_create_client)
-
-        if not self._cookies_loaded:
-            cookie_file = self._storage_path / "lwp_cookies.txt"
-            cookies = LWPCookieJar(filename=str(cookie_file))
-            try:
-                await asyncio.to_thread(cookies.load, ignore_discard=True)
-                self._client.cookies.update(cookies)
-            except FileNotFoundError:
-                _LOGGER.debug("Starting with empty cookie jar.")
-            self._cookies_loaded = True
 
         return self._client
 
@@ -227,9 +230,10 @@ class WebifConnection:
 
     async def close(self) -> None:
         """Gracefully close the underlying HTTP client."""
-        self._check_and_reset_stats(force=True)
         if self._client and not self._client.is_closed:
             await self._client.aclose()
+        self._client = None
+        self._cookies_loaded = False  # Ensures saved session cookies reload next cycle
 
     async def _request(
         self,
@@ -334,6 +338,10 @@ class WebifConnection:
         if url != "/login.html":
             _LOGGER.info("Session expired. Re-authenticating...")
             await self._login()
+
+            # Give the MCU a small breather after the password check
+            await asyncio.sleep(self._request_delay)
+
             # Retry original request after re-login
             self._stats["requests"] += 1
             start_retry = time.monotonic()
@@ -463,7 +471,6 @@ class WebifConnection:
         :raises ValueError: If an invalid category name is provided.
         """
         requested = self._validate_categories(categories)
-
         info_header = INFO_HEADER.format(token=self._token)
         self._values.setdefault("Info", {})
 
@@ -472,83 +479,100 @@ class WebifConnection:
             if self._stack_codes:
                 await self._save_state()
 
-        # Fetch each category with its own single-level request. Some WEM
-        # firmware variants do not return one values column per category when
-        # several are stacked into a single request (the extra stacks are
-        # treated as a nested path), so batching is avoided.
+        # Iterate through categories sequentially using a private helper
         for category in requested:
-            code = self._stack_codes.get(category)
-            if not code:
-                fallback_category = None
-                if category == "Heizkreis" and "Heizkreis1" in self._stack_codes:
-                    fallback_category = "Heizkreis1"
-                elif category == "Heizkreis1" and "Heizkreis" in self._stack_codes:
-                    fallback_category = "Heizkreis"
-
-                if fallback_category:
-                    code = self._stack_codes[fallback_category]
-                    _LOGGER.debug(
-                        "Category '%s' not found; using fallback code from '%s'",
-                        category,
-                        fallback_category,
-                    )
-                else:
-                    _LOGGER.warning(
-                        "No stack code discovered for '%s' (token '%s'); skipping. "
-                        "The category may be absent from this device's Info menu.",
-                        category,
-                        self._token,
-                    )
-                    continue
-            url = f"/settings_export.html?stack={info_header},{code}"
-            response = await self._request("GET", url)
-            if response.status_code != HTTP_OK:
-                _LOGGER.warning(
-                    "WebIF returned HTTP %s for '%s'; skipping this cycle",
-                    response.status_code,
-                    category,
-                )
-                continue
-
-            soup = BeautifulSoup(markup=response.text, features="html.parser")
-            cols = soup.find_all("div", class_="col-3")
-            if len(cols) < 3:  # noqa: PLR2004
-                _LOGGER.warning(
-                    "Incomplete WebIF page for '%s': got %d column(s), expected "
-                    "at least 3. This just happens sometimes."
-                    "If you get NO values maybe your token: '%s' is wrong.",
-                    category,
-                    len(cols),
-                    self._token,
-                )
-                continue
-
-            section_data = self._get_values(cols[2])
-            found = len(section_data)
-            expected = EXPECTED_COUNTS.get(category, 0)
-            if found == 0:
-                _LOGGER.warning(
-                    "No values parsed for '%s' (token '%s'); skipping",
-                    category,
-                    self._token,
-                )
-                continue
-            if expected and found != expected:
-                _LOGGER.debug(
-                    "Section [%s]: %d entries (reference device has %d); "
-                    "keeping all parsed values",
-                    category,
-                    found,
-                    expected,
-                )
-            self._values["Info"][category] = section_data
-            self._stats["successes"] += 1
+            section_data = await self._fetch_category_data(category, info_header)
+            if section_data:
+                self._values["Info"][category] = section_data
+                self._stats["successes"] += 1
 
         _LOGGER.debug("WebIF update cycle done (token='%s').", self._token)
-
-        # Change some strings to numerics
         await self._postprocess_values()
+
         return self._values["Info"]
+
+    async def _fetch_category_data(
+        self,
+        category: str,
+        info_header: str,
+    ) -> dict[str, str] | None:
+        """Fetch and parse HTML data for a single WebIF category."""
+        code = self._stack_codes.get(category)
+        if not code:
+            code = self._resolve_fallback_code(category)
+            if not code:
+                _LOGGER.warning(
+                    "No stack code discovered for '%s' (token '%s'); skipping. "
+                    "The category may be absent from this device's Info menu.",
+                    category,
+                    self._token,
+                )
+                return None
+
+        url = f"/settings_export.html?stack={info_header},{code}"
+        response = await self._request("GET", url)
+        if response.status_code != HTTP_OK:
+            _LOGGER.warning(
+                "WebIF returned HTTP %s for '%s'; skipping this cycle",
+                response.status_code,
+                category,
+            )
+            return None
+
+        soup = BeautifulSoup(markup=response.text, features="html.parser")
+        cols = soup.find_all("div", class_="col-3")
+        if len(cols) < 3:  # noqa: PLR2004
+            self._stats["integrity_failures"] += 1
+            _LOGGER.warning(
+                "Incomplete WebIF page for '%s': got %d column(s), expected "
+                "at least 3. This just happens sometimes."
+                "If you get NO values maybe your token: '%s' is wrong.",
+                category,
+                len(cols),
+                self._token,
+            )
+            return None
+
+        section_data = self._get_values(cols[2])
+        found = len(section_data)
+        expected = EXPECTED_COUNTS.get(category, 0)
+        if found == 0:
+            self._stats["integrity_failures"] += 1
+            _LOGGER.warning(
+                "No values parsed for '%s' (token '%s'); skipping",
+                category,
+                self._token,
+            )
+            return None
+
+        if expected and found != expected:
+            _LOGGER.debug(
+                "Section [%s]: %d entries (reference device has %d); "
+                "keeping all parsed values",
+                category,
+                found,
+                expected,
+            )
+
+        return section_data
+
+    def _resolve_fallback_code(self, category: str) -> str | None:
+        """Attempt to find a fallback stack code for equivalent categories."""
+        fallback_category = None
+        if category == "Heizkreis" and "Heizkreis1" in self._stack_codes:
+            fallback_category = "Heizkreis1"
+        elif category == "Heizkreis1" and "Heizkreis" in self._stack_codes:
+            fallback_category = "Heizkreis"
+
+        if fallback_category:
+            code = self._stack_codes[fallback_category]
+            _LOGGER.debug(
+                "Category '%s' not found; using fallback code from '%s'",
+                category,
+                fallback_category,
+            )
+            return code
+        return None
 
     async def update_all_mock(
         self,
