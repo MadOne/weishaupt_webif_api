@@ -42,9 +42,8 @@ class WebifConnection:
         user: str,
         password: str,
         *,
-        token: str = "F9AF",  # noqa: S107
         request_delay: float = 10.0,
-        cooldown_delay: float = 300.0,
+        cooldown_delay: float = 15.0,
         storage_path: str | Path | None = None,
     ) -> None:
         """Initialize the connection.
@@ -62,9 +61,9 @@ class WebifConnection:
         self._ip = ip
         self._username = user
         self._password = password
-        self._token = token
+        self._token = None
         self._stack_codes: dict[str, str] = {}
-        _LOGGER.debug("WebIF connection initialized with token '%s'", token)
+        _LOGGER.debug("WebIF connection initialized with token")
         self._storage_path = Path(storage_path) if storage_path else Path.cwd()
 
         self._state_file = self._storage_path / "lwp_state.json"
@@ -135,6 +134,7 @@ class WebifConnection:
 
             # Recover stack codes
             self._stack_codes = cast("dict[str, str]", state.get("stack_codes", {}))
+            self._token = state.get("token", self._token)
         except OSError:
             self._cooldown_until = 0.0
             self._stack_codes = {}
@@ -147,6 +147,7 @@ class WebifConnection:
         state_data = {
             "cooldown_expiry": time.time() + remaining if remaining > 0 else 0.0,
             "stack_codes": self._stack_codes,
+            "token": self._token,
         }
 
         def _save() -> None:
@@ -407,6 +408,7 @@ class WebifConnection:
             msg = "MCU database connection failure."
             raise McuResourceError(msg)
         if "home.html" in final_url:
+            self._stats["successes"] += 1
             _LOGGER.info("✅ Successful Login!")
             if self._client and isinstance(self._client.cookies.jar, LWPCookieJar):
                 await asyncio.to_thread(
@@ -417,6 +419,34 @@ class WebifConnection:
         else:
             msg = "Login failed: Unexpected response."
             raise WeishauptWebifError(msg)
+
+    async def _autodetect_token(self) -> str | None:
+        """Fetch the settings_export overview page and parse the device-specific token."""
+        _LOGGER.debug("Attempting to autodetect WebIF token...")
+
+        # Raw request to the overview page with no query parameters
+        response = await self._request("GET", "/settings_export.html")
+        if response.status_code != HTTP_OK:
+            _LOGGER.debug("Could not reach /settings_export.html for autodetection")
+            return None
+
+        soup = BeautifulSoup(markup=response.text, features="html.parser")
+        for link in soup.find_all("a"):
+            href = str(link.get("href", ""))
+            if "settings_export.html?stack=" not in href:
+                continue
+
+            # Extract the raw hex stack string
+            stack = href.split("stack=", 1)[-1].strip()
+            if len(stack) >= 38:  # Standard 1st-level stack length
+                # Extract the 4-digit token at index 22 to 26
+                token = stack[22:26]
+                self._stats["successes"] += 1
+                _LOGGER.info("✅ Autodetected WebIF token: '%s'", token)
+                return token
+
+        _LOGGER.warning("Could not autodetect WebIF token from /settings_export.html")
+        return None
 
     async def _discover_stack_codes(self) -> dict[str, str]:
         """Discover this device's per-category second-level stack codes.
@@ -458,6 +488,10 @@ class WebifConnection:
                 "The token '%s' is likely wrong for this device, or login failed.",
                 self._token,
             )
+
+        else:
+            # Increment successes for the stack code discovery request
+            self._stats["successes"] += 1
         return codes
 
     async def update_all(
@@ -470,25 +504,51 @@ class WebifConnection:
         :return: A dictionary containing the updated data grouped by category.
         :raises ValueError: If an invalid category name is provided.
         """
+        # 1. Ensure the saved state (and token) are loaded BEFORE checking the token
+        if not self._initialized:
+            await self._load_state()
+
+        # 2. Autodetect the token ONLY if it was not found in the state file
+        if not self._token:
+            detected_token = await self._autodetect_token()
+            if detected_token:
+                self._token = detected_token
+                await self._save_state()
+
         requested = self._validate_categories(categories)
         info_header = INFO_HEADER.format(token=self._token)
         self._values.setdefault("Info", {})
 
-        if not self._stack_codes:
-            self._stack_codes = await self._discover_stack_codes()
-            if self._stack_codes:
-                await self._save_state()
+        try:
+            if not self._stack_codes:
+                self._stack_codes = await self._discover_stack_codes()
+                if self._stack_codes:
+                    await self._save_state()
 
-        # Iterate through categories sequentially using a private helper
-        for category in requested:
-            section_data = await self._fetch_category_data(category, info_header)
-            if section_data:
-                self._values["Info"][category] = section_data
-                self._stats["successes"] += 1
+            # Iterate through categories sequentially using a private helper
+            for category in requested:
+                section_data = await self._fetch_category_data(category, info_header)
+                if section_data:
+                    self._values["Info"][category] = section_data
+                    self._stats["successes"] += 1
 
-        _LOGGER.debug("WebIF update cycle done (token='%s').", self._token)
-        await self._postprocess_values()
+            _LOGGER.debug("WebIF update cycle done (token='%s').", self._token)
+            await self._postprocess_values()
 
+        except Exception as err:
+            # Log the unexpected error or timeout before closing the connection
+            _LOGGER.warning("WebIF update failed: %s. Resetting connection.", err)
+            await self.close()
+            raise
+
+        except asyncio.CancelledError:
+            # Log cancellation at DEBUG level (expected during restarts/unloads)
+            _LOGGER.debug("WebIF update task cancelled. Cleaning up connection.")
+            await self.close()
+            raise
+
+        # Note: No "finally" block here. On successful completion, we do NOT close
+        # the client, allowing the connection to stay open for the next 10-second tick.
         return self._values["Info"]
 
     async def _fetch_category_data(
@@ -525,11 +585,9 @@ class WebifConnection:
             self._stats["integrity_failures"] += 1
             _LOGGER.warning(
                 "Incomplete WebIF page for '%s': got %d column(s), expected "
-                "at least 3. This just happens sometimes."
-                "If you get NO values maybe your token: '%s' is wrong.",
+                "at least 3. This just happens sometimes.",
                 category,
                 len(cols),
-                self._token,
             )
             return None
 
@@ -555,24 +613,6 @@ class WebifConnection:
             )
 
         return section_data
-
-    def _resolve_fallback_code(self, category: str) -> str | None:
-        """Attempt to find a fallback stack code for equivalent categories."""
-        fallback_category = None
-        if category == "Heizkreis" and "Heizkreis1" in self._stack_codes:
-            fallback_category = "Heizkreis1"
-        elif category == "Heizkreis1" and "Heizkreis" in self._stack_codes:
-            fallback_category = "Heizkreis"
-
-        if fallback_category:
-            code = self._stack_codes[fallback_category]
-            _LOGGER.debug(
-                "Category '%s' not found; using fallback code from '%s'",
-                category,
-                fallback_category,
-            )
-            return code
-        return None
 
     async def update_all_mock(
         self,
